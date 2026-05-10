@@ -1,5 +1,199 @@
 <?php
-// --- ДАНІ ТА ЛОГІКА (краще тримати на початку файлу) ---
+
+declare(strict_types=1);
+
+/*
+|--------------------------------------------------------------------------
+| INTERFACE
+|--------------------------------------------------------------------------
+*/
+
+interface Publishable
+{
+    public function publish(): string;
+}
+
+/*
+|--------------------------------------------------------------------------
+| ABSTRACT CLASS
+|--------------------------------------------------------------------------
+*/
+
+abstract class AbstractPost implements Publishable
+{
+    protected string $title;
+    protected string $content;
+    protected string $author;
+
+    public function __construct(
+        string $title,
+        string $content,
+        string $author
+    ) {
+        $this->setTitle($title);
+        $this->setContent($content);
+        $this->setAuthor($author);
+    }
+
+    public function setTitle(string $title): void
+    {
+        if (mb_strlen($title) < 3) {
+            throw new Exception("Назва повинна містити мінімум 3 символи.");
+        }
+        $this->title = $title;
+    }
+
+    public function setContent(string $content): void
+    {
+        if (empty(trim($content))) {
+            throw new Exception("Контент не може бути порожнім.");
+        }
+        $this->content = $content;
+    }
+
+    public function setAuthor(string $author): void
+    {
+        if (mb_strlen($author) < 2) {
+            throw new Exception("Ім’я автора закоротке.");
+        }
+        $this->author = $author;
+    }
+
+    abstract public function publish(): string;
+}
+
+/*
+|--------------------------------------------------------------------------
+| NEWS POST
+|--------------------------------------------------------------------------
+*/
+
+class NewsPost extends AbstractPost
+{
+    private string $date;
+
+    public function __construct(
+        string $title,
+        string $content,
+        string $author,
+        string $date
+    ) {
+        parent::__construct($title, $content, $author);
+        $this->date = $date;
+    }
+
+    public function publish(): string
+    {
+        $title = htmlspecialchars($this->title);
+        $content = htmlspecialchars($this->content);
+        $author = htmlspecialchars($this->author);
+        $date = htmlspecialchars($this->date);
+
+        return "
+        <article class='oop-card'>
+            <h3>{$title}</h3>
+            <section>
+                <p>{$content}</p>
+                <p><strong>Автор:</strong> {$author}</p>
+                <p><strong>Дата:</strong> {$date}</p>
+            </section>
+        </article>
+        ";
+    }
+
+    public function getShortContent(): string
+    {
+        return mb_substr($this->content, 0, 50) . "...";
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| TIP POST
+|--------------------------------------------------------------------------
+*/
+
+class TipPost extends AbstractPost
+{
+    private int $difficulty;
+
+    public function __construct(
+        string $title,
+        string $content,
+        string $author,
+        int $difficulty
+    ) {
+        parent::__construct($title, $content, $author);
+        $this->setDifficulty($difficulty);
+    }
+
+    public function setDifficulty(int $difficulty): void
+    {
+        if ($difficulty < 1 || $difficulty > 5) {
+            throw new Exception("Складність повинна бути від 1 до 5.");
+        }
+        $this->difficulty = $difficulty;
+    }
+
+    public function publish(): string
+    {
+        $title = htmlspecialchars($this->title);
+        $content = htmlspecialchars($this->content);
+        $author = htmlspecialchars($this->author);
+
+        return "
+        <article class='oop-card'>
+            <h3>{$title}</h3>
+            <section>
+                <p>{$content}</p>
+                <p><strong>Складність:</strong> {$this->difficulty}/5</p>
+                <p><strong>Автор:</strong> {$author}</p>
+            </section>
+        </article>
+        ";
+    }
+
+    public function isHard(): bool
+    {
+        return $this->difficulty >= 4;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| CATEGORY
+|--------------------------------------------------------------------------
+*/
+
+class Category
+{
+    private string $name;
+    private array $posts = [];
+
+    public function __construct(string $name)
+    {
+        if (mb_strlen($name) < 3) {
+            throw new Exception("Назва категорії закоротка.");
+        }
+        $this->name = $name;
+    }
+
+    public function addPost(Publishable $post): void
+    {
+        $this->posts[] = $post;
+    }
+
+    public function getPosts(): array
+    {
+        return $this->posts;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| DATA
+|--------------------------------------------------------------------------
+*/
 
 $nav = [
     "Оголошення" => "#announcements",
@@ -27,142 +221,132 @@ $aside_tips = [
     "Пиши викладачу заздалегідь",
     "Не здавай роботу без перевірки"
 ];
+
+/*
+|--------------------------------------------------------------------------
+| OOP OBJECTS (ВИПРАВЛЕНО ЛОГІКУ)
+|--------------------------------------------------------------------------
+*/
+
+$category = new Category("Student Hub");
+$system_errors = []; // Збираємо помилки тут
+
+// Створюємо кожен пост окремо, щоб помилка в одному не зупиняла інші
+try {
+    $post1 = new NewsPost("Розклад консультацій", "Кафедра опублікувала графік консультацій для студентів перед сесією.", "Адміністрація", "2026-02-08");
+    $category->addPost($post1);
+} catch (Exception $e) { $system_errors[] = $e->getMessage(); }
+
+try {
+    $post2 = new TipPost("Як здати лабораторні роботи", "Розбий завдання на маленькі кроки та залиш резервний день.", "Викладач", 3);
+    $category->addPost($post2);
+} catch (Exception $e) { $system_errors[] = $e->getMessage(); }
+
+try {
+    // НЕВАЛІДНИЙ ОБ’ЄКТ - викличе помилку
+    $post3 = new TipPost("Hi", "test", "A", 10);
+    $category->addPost($post3);
+} catch (Exception $e) { $system_errors[] = $e->getMessage(); }
+
 ?>
 <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <title>Головна | Student Hub</title>
-    <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Student Hub — навчальний приклад інформаційного порталу для студентів.">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
+        .oop-card { background: #ffffff; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .error-message { background: #ffebee; color: #c62828; padding: 15px; margin: 20px 0; border-radius: 10px; border: 1px solid #ef9a9a; }
+        header, nav, main, aside, footer { margin-bottom: 30px; }
+        nav ul { list-style: none; padding: 0; display: flex; gap: 15px; background: #34495e; padding: 10px; border-radius: 5px; }
+        nav ul li a { color: white; text-decoration: none; }
+        form { background: #fefefe; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
 
 <header>
     <h1>Student Hub</h1>
-    <p>Hello world</p>
     <p>Студентський портал для навчання, дедлайнів та корисних порад.</p>
 </header>
 
 <nav>
     <ul>
         <?php foreach ($nav as $name => $link): ?>
-            <li><a href="<?php echo htmlspecialchars($link); ?>"><?php echo htmlspecialchars($name); ?></a></li>
+            <li><a href="<?= htmlspecialchars($link); ?>"><?= htmlspecialchars($name); ?></a></li>
         <?php endforeach; ?>
     </ul>
 </nav>
 
 <main>
+    <!-- ПОВІДОМЛЕННЯ ПРО ПОМИЛКИ -->
+    <?php if (!empty($system_errors)): ?>
+        <div class="error-message">
+            <strong>Повідомлення системи:</strong>
+            <ul>
+                <?php foreach ($system_errors as $error): ?>
+                    <li><?= htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
+    <!-- OOP POSTS -->
+    <section>
+        <h2>ООП Публікації</h2>
+        <?php foreach ($category->getPosts() as $post): ?>
+            <?= $post->publish(); ?>
+        <?php endforeach; ?>
+    </section>
+
+    <!-- BUSINESS LOGIC (БЕЗПЕЧНО) -->
+    <section class="oop-card">
+        <h2>Бізнес-логіка</h2>
+        <?php if (isset($post1)): ?>
+            <p><strong>Скорочений текст новини:</strong> <?= $post1->getShortContent(); ?></p>
+        <?php endif; ?>
+
+        <?php if (isset($post2)): ?>
+            <p><strong>Порада складна?</strong> <?= $post2->isHard() ? 'Так' : 'Ні'; ?></p>
+        <?php endif; ?>
+    </section>
+
+    <!-- ORIGINAL CONTENT -->
     <h2 id="announcements">Оголошення</h2>
-    <figure>
-        <img src="images/5fa51771cbae7647226875.gif" alt="Іконка дедлайну" width="200">
-        <figcaption>20.02.2026 року відбудеться дедлайн</figcaption>
-    </figure>
-
-    <article>
+    <article class="oop-card">
         <h3>Розклад консультацій перед сесією</h3>
-        <section>
-            <h4>Основна інформація</h4>
-            <p>Кафедра опублікувала графік консультацій для студентів перед екзаменаційною сесією.</p>
-            <p>Дата публікації: <time datetime="2026-02-08">8 лютого 2026</time></p>
-        </section>
-
-        <section>
-            <h4>Пояснення для студентів</h4>
-            <p>Якщо ти пропустив(ла) лекції або хочеш уточнити питання перед екзаменом — консультація допоможе.</p>
-            <blockquote>
-                <p>Краще прийти на консультацію з 3 конкретними питаннями.</p>
-            </blockquote>
-        </section>
+        <p>Дата публікації: <time datetime="2026-02-08">8 лютого 2026</time></p>
+        <blockquote>Краще прийти на консультацію з 3 конкретними питаннями.</blockquote>
     </article>
 
     <h2 id="study">Навчання</h2>
-    <article>
-        <h3>Як здати лабораторні роботи без стресу</h3>
-        <section>
-            <h4>План роботи</h4>
-            <p>Якщо розбити завдання на маленькі кроки — стає легше.</p>
-        </section>
-
-        <section>
-            <h4>Типові помилки</h4>
-            <ul>
-                <?php foreach ($mistakes as $m): ?>
-                    <li><?php echo htmlspecialchars($m); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
-    </article>
-
-    <h2 id="tips">Поради</h2>
-    <article>
-        <h3>Як організувати навчання</h3>
-        <section>
-            <h4>Міні-інструкція</h4>
-            <ol>
-                <?php foreach ($steps as $step): ?>
-                    <li><?php echo htmlspecialchars($step); ?></li>
-                <?php endforeach; ?>
-            </ol>
-        </section>
-    </article>
-
-    <h2 id="survey">Опитування для студентів</h2>
-    <article>
-        <h3>Тестова форма опитування</h3>
-        <form action="result.php" method="post" style="background:#fefefe;padding:20px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);">
-            <label for="prep">Як ти оцінюєш свою підготовку?</label><br>
-            <select name="prep" id="prep" required>
-                <option value="">-- Обери варіант --</option>
-                <option value="good">Добре</option>
-                <option value="normal">Нормально</option>
-                <option value="bad">Погано</option>
-            </select>
-            <br><br>
-
-            <label>Скільки часу ти приділяєш навчанню на день?</label><br>
-            <input type="radio" name="time" value="1" required> Менше 1 години<br>
-            <input type="radio" name="time" value="2"> 1-3 години<br>
-            <input type="radio" name="time" value="3"> Більше 3 годин<br>
-            <br>
-
-            <label>Які ресурси ти використовуєш?</label><br>
-            <input type="checkbox" name="tools[]" value="notes"> Конспекти<br>
-            <input type="checkbox" name="tools[]" value="youtube"> YouTube<br>
-            <input type="checkbox" name="tools[]" value="chatgpt"> ChatGPT<br>
-            <br>
-
-            <button type="submit" style="padding:10px 20px;background:#34495e;color:white;border:none;border-radius:6px;cursor:pointer;">
-                Надіслати
-            </button>
-        </form>
-    </article>
-
-</main>
-
-<aside>
-    <h2 id="pip">Додатково</h2>
-    <section>
-        <h3>Швидка пам’ятка студенту</h3>
+    <article class="oop-card">
+        <h3>Типові помилки при здачі робіт</h3>
         <ul>
-            <?php foreach ($aside_tips as $t): ?>
-                <li><?php echo htmlspecialchars($t); ?></li>
+            <?php foreach ($mistakes as $m): ?>
+                <li><?= htmlspecialchars($m); ?></li>
             <?php endforeach; ?>
         </ul>
-    </section>
-</aside>
+    </article>
+
+    <h2 id="survey">Опитування</h2>
+    <form action="result.php" method="post">
+        <label for="prep">Як ти оцінюєш підготовку?</label><br>
+        <select name="prep" id="prep" required>
+            <option value="">-- Обери --</option>
+            <option value="good">Добре</option>
+            <option value="normal">Нормально</option>
+        </select>
+        <br><br>
+        <button type="submit" style="padding:10px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;">Надіслати</button>
+    </form>
+</main>
 
 <footer id="contacts">
-    <h2>Контакти</h2>
-    <address>
-        <p>Student Hub — навчальний портал</p>
-        <p>Email: <a href="mailto:studenthub@example.com">studenthub@example.com</a></p>
-        <p>Телефон: <a href="tel:+380000000000">+38 (000) 000-00-00</a></p>
-    </address>
-    <p>Останнє оновлення: <time datetime="2026-02-08">8 лютого 2026</time></p>
-    <p>&copy; 2026 Student Hub</p>
+    <hr>
+    <p>&copy; 2026 Student Hub | Email: <a href="mailto:studenthub@example.com">studenthub@example.com</a></p>
 </footer>
 
 </body>
