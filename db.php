@@ -1,23 +1,20 @@
 <?php
+// db.php
+$host = '127.0.0.1';
+$db   = 'blog_system'; // Имя твоей базы в phpMyAdmin
+$user = 'root';        // Стандартный пользователь в XAMPP/OpenServer
+$pass = '';            // Стандартный пароль (обычно пустой)
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
 
 try {
-
-    $pdo = new PDO(
-        "mysql:host=localhost;dbname=blog_system;charset=utf8",
-        "root",
-        ""
-    );
-
-    $pdo->setAttribute(
-        PDO::ATTR_ERRMODE,
-        PDO::ERRMODE_EXCEPTION
-    );
-
-} catch (PDOException $e) {
-
-    die(
-        "Помилка підключення: "
-        . $e->getMessage()
-    );
-
+     $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (\PDOException $e) {
+     throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }
