@@ -150,7 +150,8 @@ $nav = [
     "Навчання" => "#study",
     "Поради" => "#tips",
     "Контакти" => "#contacts",
-    "Додатково" => "#pip"
+    "Додатково" => "#pip",
+    "Адмінка ⚙️"  => "admin.php" // 🔥 Додано посилання на майбутню сторінку адмінки
 ];
 
 $mistakes = [
@@ -173,7 +174,7 @@ $dynamic_news_post = null;
 $dynamic_tip_post = null;
 
 try {
-    // 1. Делаем запрос к БД, объединяя таблицы постов, новостей и советов
+    // 1. Робимо запит до БД, сортуючи пости за ID від новіших до старіших
     $query = "
         SELECT 
             p.id, p.type, p.title, p.content, p.author,
@@ -182,6 +183,7 @@ try {
         FROM posts p
         LEFT JOIN posts_news pn ON p.id = pn.post_id
         LEFT JOIN posts_tips pt ON p.id = pt.post_id
+        ORDER BY p.id DESC
     ";
     
     $stmt = $pdo->query($query);
@@ -211,7 +213,8 @@ try {
     <meta charset="UTF-8">
     <title>Головна | Student Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css"> </head>
+    <link rel="stylesheet" href="style.css"> 
+</head>
 <body>
 
 <header>
@@ -253,7 +256,7 @@ try {
         <?php if ($dynamic_news_post): ?>
             <p><strong>Скорочений текст першої новини:</strong> <?= $dynamic_news_post->getShortContent(); ?></p>
         <?php else: ?>
-            <p style="color: gray;">Новин в базі даних не знайдено.</p>
+            <p style="color: gray;">Новин в базі данных не знайдено.</p>
         <?php endif; ?>
 
         <?php if ($dynamic_tip_post): ?>
