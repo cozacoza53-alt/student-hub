@@ -307,6 +307,6 @@ try {
 <footer id="contacts">
     <p>&copy; 2026 Student Hub | Email: <a href="mailto:studenthub@example.com">studenthub@example.com</a></p>
 </footer>
-
+<script src="js/main.js"></script>
 </body>
 </html>
