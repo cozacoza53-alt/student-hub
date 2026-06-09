@@ -151,7 +151,7 @@ $nav = [
     "Поради" => "#tips",
     "Контакти" => "#contacts",
     "Додатково" => "#pip",
-    "Адмінка ⚙️"  => "admin.php" // 🔥 Додано посилання на майбутню сторінку адмінки
+    "Адмінка ⚙️"  => "admin.php" 
 ];
 
 $mistakes = [
@@ -166,7 +166,7 @@ $mistakes = [
 | ДИНАМИЧЕСКОЕ ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ (НОВЫЙ КОД)
 |--------------------------------------------------------------------------
 */
-require_once 'db.php'; // Подключаем файл с настройками PDO
+require_once 'db.php'; 
 
 $category = new Category("Student Hub");
 $system_errors = [];
@@ -174,7 +174,6 @@ $dynamic_news_post = null;
 $dynamic_tip_post = null;
 
 try {
-    // 1. Робимо запит до БД, сортуючи пости за ID від новіших до старіших
     $query = "
         SELECT 
             p.id, p.type, p.title, p.content, p.author,
@@ -189,14 +188,13 @@ try {
     $stmt = $pdo->query($query);
     $rows = $stmt->fetchAll();
 
-    // 2. Превращаем строки из БД в ООП-объекты
     foreach ($rows as $row) {
         if ($row['type'] === 'news') {
             $post = new NewsPost($row['title'], $row['content'], $row['author'], $row['post_date']);
-            if (!$dynamic_news_post) $dynamic_news_post = $post; // Сохраняем первую новость для теста бизнес-логики ниже
+            if (!$dynamic_news_post) $dynamic_news_post = $post; 
         } elseif ($row['type'] === 'tip') {
             $post = new TipPost($row['title'], $row['content'], $row['author'], (int)$row['difficulty']);
-            if (!$dynamic_tip_post) $dynamic_tip_post = $post;   // Сохраняем первый совет для теста бизнес-логики ниже
+            if (!$dynamic_tip_post) $dynamic_tip_post = $post;   
         }
         
         $category->addPost($post);
@@ -260,7 +258,7 @@ try {
         <?php endif; ?>
 
         <?php if ($dynamic_tip_post): ?>
-            <p><strong>Перша порада складна?</strong> <?= $dynamic_tip_post->isHard() ? 'Так' : 'Ні'; ?></p>
+            <p><strong>Перша порада сложна?</strong> <?= $dynamic_tip_post->isHard() ? 'Так' : 'Ні'; ?></p>
         <?php else: ?>
             <p style="color: gray;">Порад в базі даних не знайдено.</p>
         <?php endif; ?>
@@ -302,11 +300,34 @@ try {
         
         <input type="hidden" name="time" value="2"> <button type="submit" style="padding:10px 20px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;">Надіслати</button>
     </form>
+
+    <article id="app-container" style="flex-basis: 100%; margin-top: 30px;">
+        <h2>Практична робота: Динамічне керування структурою та подіями в DOM</h2>
+        
+        <form id="todo-form" style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="item-input" placeholder="Введіть назву картки/завдання..." autocomplete="off" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+            <button type="submit" style="background-color: #1abc9c; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Додати</button>
+        </form>
+
+        <div class="controls-panel" style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button type="button" id="clear-all-btn" style="background-color: #e74c3c; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Очистити весь список</button>
+            <button type="button" id="generate-items-btn" style="background-color: #9b59b6; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Згенерувати 20 елементів</button>
+        </div>
+
+        <div id="info-panel" style="background: #eef1f4; padding: 10px; border-radius: 6px; font-size: 13px; color: #555; font-family: monospace; margin-bottom: 15px; text-align: center;">
+            Ширина: 0px | Висота: 0px
+        </div>
+
+        <ul class="item-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+    </article>
 </main>
+
+<div id="notification-container" class="notification">Дія успішно виконана!</div>
 
 <footer id="contacts">
     <p>&copy; 2026 Student Hub | Email: <a href="mailto:studenthub@example.com">studenthub@example.com</a></p>
 </footer>
-<script src="js/main.js"></script>
+
+<script src="main.js" defer></script>
 </body>
 </html>

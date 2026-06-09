@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
-require_once 'db.php';
+
+// Безпечне підключення конфігурації бази даних для XAMPP
+require_once __DIR__ . '/db.php';
 
 $system_message = "";
 
@@ -8,8 +10,8 @@ $system_message = "";
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     try {
-        // Завдяки ON DELETE CASCADE у твоїй структурі БД,
-        // при видаленні з таблиці posts дочірні таблиці очистяться самі.
+        // Завдяки ON DELETE CASCADE у структурі твого SQL-дампу,
+        // при видаленні з таблиці posts дочірні записи (news/tips) очистяться самі.
         $stmt = $pdo->prepare("DELETE FROM posts WHERE id = ?");
         $stmt->execute([$id]);
         $system_message = "Публікацію успішно видалено з бази даних!";
@@ -33,27 +35,31 @@ $posts = $pdo->query($query)->fetchAll();
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Панель адміністратора | CRUD</title>
+    <title>Панель адміністрування | Student Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .admin-table th, .admin-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; color: #333; }
+        /* Локальні стилі для акуратної структури таблиці адмінки */
+        .admin-container { padding: 30px; max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-top: 30px; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         .admin-table th { background-color: #34495e; color: white; }
-        .btn { padding: 8px 14px; text-decoration: none; border-radius: 4px; color: white; font-size: 14px; display: inline-block; }
-        .btn-add { background-color: #2ecc71; font-weight: bold; margin-bottom: 15px; }
-        .btn-edit { background-color: #3498db; margin-right: 5px; }
-        .btn-delete { background-color: #e74c3c; border: none; cursor: pointer; }
-        .alert { padding: 15px; background: #e8f5e9; color: #2e7d32; border-radius: 8px; margin-bottom: 15px; border: 1px solid #c8e6c9; }
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; color: white; font-weight: bold; }
-        .badge-news { background: #e67e22; }
-        .badge-tip { background: #9b59b6; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; }
+        .badge-news { background-color: #3498db; }
+        .badge-tip { background-color: #e67e22; }
+        .btn { display: inline-block; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 5px; }
+        .btn-add { background-color: #2ecc71; color: white; margin-bottom: 20px; padding: 10px 20px; }
+        .btn-edit { background-color: #f1c40f; color: #333; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+        .btn-back { background-color: #7f8c8d; color: white; margin-left: 10px; }
+        .alert { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
+
 <header>
-    <h1>Панель адміністратора (CRUD)</h1>
-    <p><a href="index.php" style="color: #1abc9c; text-decoration: none; font-weight: bold;">⬅ Повернутися на сайт</a></p>
+    <h1>Панель керування матеріалами</h1>
+    <p>Редагування, видалення та додавання нових публікацій у базу даних.</p>
 </header>
 
 <div class="admin-container">
@@ -61,7 +67,10 @@ $posts = $pdo->query($query)->fetchAll();
         <div class="alert"><?= htmlspecialchars($system_message); ?></div>
     <?php endif; ?>
 
-    <a href="form.php" class="btn btn-add">➕ Створити нову публікацію</a>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="form.php" class="btn btn-add">➕ Створити нову публікацію</a>
+        <a href="index.php" class="btn btn-back">⬅ На головну</a>
+    </div>
 
     <table class="admin-table">
         <thead>
@@ -70,14 +79,14 @@ $posts = $pdo->query($query)->fetchAll();
                 <th>Тип</th>
                 <th>Заголовок</th>
                 <th>Автор</th>
-                <th>Додаткові параметри</th>
+                <th>Специфічні дані</th>
                 <th>Дії</th>
             </tr>
         </thead>
         <tbody>
-            <?php if(empty($posts)): ?>
+            <?php if (empty($posts)): ?>
                 <tr>
-                    <td colspan="6" style="text-align: center; color: gray;">Таблиця порожня. Додайте перший пост!</td>
+                    <td colspan="6" style="text-align: center; color: gray;">У базі даних немає жодної публікації.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($posts as $post): ?>
@@ -101,7 +110,7 @@ $posts = $pdo->query($query)->fetchAll();
                         </td>
                         <td>
                             <a href="form.php?id=<?= $post['id']; ?>" class="btn btn-edit">✏ Редагувати</a>
-                            <a href="admin.php?action=delete&id=<?= $post['id']; ?>" class="btn btn-delete" onclick="return confirm('Ви впевнені, що хочете видалити цей запис?')">❌ Видалити</a>
+                            <a href="admin.php?action=delete&id=<?= $post['id']; ?>" class="btn btn-delete" onclick=\"return confirm('Ви впевнені, що хочете видалити цей запис?')\">❌ Видалити</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
